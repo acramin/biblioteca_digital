@@ -1,9 +1,19 @@
-// Busca livros na Google Books API
-async function buscarLivros() {
-  const query = document.getElementById("searchInput").value;
+let paginaAtual = 1;
+const resultadosPorPagina = 10;
+let ultimaBusca = "";
+
+// Função de busca
+async function buscarLivros(pagina = 1) {
+  const query = document.getElementById("searchInput").value || ultimaBusca;
+  if (!query) return;
+
+  ultimaBusca = query; // salva para usar ao trocar de página
+  paginaAtual = pagina;
+
+  const startIndex = (paginaAtual - 1) * resultadosPorPagina;
   const url = `https://www.googleapis.com/books/v1/volumes?q=${encodeURIComponent(
     query
-  )}`;
+  )}&maxResults=${resultadosPorPagina}&startIndex=${startIndex}`;
 
   const res = await fetch(url);
   const data = await res.json();
@@ -28,6 +38,34 @@ async function buscarLivros() {
       resultadosDiv.appendChild(card);
     });
   }
+
+  mostrarPaginacao(data.totalItems || 0);
+}
+
+// Função para exibir botões de paginação
+function mostrarPaginacao(totalResultados) {
+  const totalPaginas = Math.ceil(totalResultados / resultadosPorPagina);
+  const container = document.getElementById("paginacao");
+  const contador = document.getElementById("contadorPagina");
+
+  container.innerHTML = "";
+
+  if (paginaAtual > 1) {
+    const btnPrev = document.createElement("button");
+    btnPrev.textContent = "⬅ Anterior";
+    btnPrev.onclick = () => buscarLivros(paginaAtual - 1);
+    container.appendChild(btnPrev);
+  }
+
+  if (paginaAtual < totalPaginas) {
+    const btnNext = document.createElement("button");
+    btnNext.textContent = "Próxima ➡";
+    btnNext.onclick = () => buscarLivros(paginaAtual + 1);
+    container.appendChild(btnNext);
+  }
+
+  // Exibe contador de páginas
+  contador.textContent = `Página ${paginaAtual} de ${totalPaginas}`;
 }
 
 // Adiciona livro à biblioteca (salvando em localStorage)
